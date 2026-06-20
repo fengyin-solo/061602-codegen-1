@@ -108,3 +108,14 @@ export interface TaskStats {
   normalCompleted: number
   hardCompleted: number
 }
+
+export interface TaskTemplate {
+  type: TaskType
+  title: string
+  description: string
+  baseTarget: number
+  baseReward: number
+  difficulty: TaskDifficulty
+  weather?: Weather[]
+  stages?: GrowthStage[]
+}

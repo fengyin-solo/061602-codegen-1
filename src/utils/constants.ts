@@ -1,4 +1,4 @@
-import type { Weather, WeatherEffect, BerryType, GrowthStage, Personality, TaskType, TaskDifficulty } from '@/types/game'
+import type { Weather, WeatherEffect, BerryType, GrowthStage, Personality, TaskType, TaskDifficulty, TaskTemplate } from '@/types/game'
 
 export const ATTR_MIN = 0
 export const ATTR_MAX = 100
@@ -113,17 +113,6 @@ export const BIRD_NAMES = [
 
 export const TASK_REFRESH_INTERVAL = 45000
 export const MAX_ACTIVE_TASKS = 4
-
-export interface TaskTemplate {
-  type: TaskType
-  title: string
-  description: string
-  baseTarget: number
-  baseReward: number
-  difficulty: TaskDifficulty
-  weather?: Weather[]
-  stages?: GrowthStage[]
-}
 
 export const TASK_TEMPLATES: TaskTemplate[] = [
   {
