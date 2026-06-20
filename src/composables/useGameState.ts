@@ -1,5 +1,5 @@
 import { reactive, computed, watch } from 'vue'
-import type { GameState, Bird, Berry, GrowthStage, Personality, BerryType, Weather, GameScore } from '@/types/game'
+import type { GameState, Bird, Berry, GrowthStage, Personality, BerryType, Weather, GameScore, Task, TaskTemplate } from '@/types/game'
 import {
   ATTR_MIN, ATTR_MAX, DEATH_THRESHOLD,
   STAGE_DURATION, FOOD_NEED_MULTIPLIER,
@@ -8,6 +8,7 @@ import {
   BERRY_VALUES, WEATHER_CHANGE_INTERVAL, WEATHER_EFFECTS,
   DAY_DURATION, INITIAL_FOOD, MIN_EGGS, MAX_EGGS,
   MAX_BREEDING_ROUNDS, BIRD_NAMES,
+  TASK_REFRESH_INTERVAL, MAX_ACTIVE_TASKS, TASK_TEMPLATES,
 } from '@/utils/constants'
 import { randomInt, randomFloat, clamp, randomChoice, generateId, chance } from '@/utils/random'
 import { saveGame, loadGame, clearSave } from '@/utils/storage'
@@ -26,6 +27,16 @@ const createInitialState = (): GameState => ({
   breedingCount: 0,
   maxBreedingRounds: MAX_BREEDING_ROUNDS,
   eventLog: [],
+  tasks: [],
+  taskStats: {
+    totalCompleted: 0,
+    totalClaimed: 0,
+    totalRewardEarned: 0,
+    easyCompleted: 0,
+    normalCompleted: 0,
+    hardCompleted: 0,
+  },
+  lastTaskRefreshAt: 0,
 })
 
 const state = reactive<GameState>(createInitialState())
@@ -89,6 +100,99 @@ const addEventLog = (message: string, type: string = 'info') => {
   if (state.eventLog.length > 50) state.eventLog.pop()
 }
 
+const getAvailableTaskTemplates = (): TaskTemplate[] => {
+  const currentWeather = state.currentWeather
+  const stages = [...new Set(state.birds.filter(b => !b.isDead).map(b => b.stage))]
+
+  return TASK_TEMPLATES.filter(template => {
+    if (template.weather && !template.weather.includes(currentWeather)) {
+      return false
+    }
+    if (template.stages && !template.stages.some(s => stages.includes(s))) {
+      return false
+    }
+    return true
+  })
+}
+
+const generateTaskFromTemplate = (template: TaskTemplate): Task => {
+  const weatherMod = template.weather?.includes(state.currentWeather) ? 1.2 : 1
+  const reward = Math.round(template.baseReward * weatherMod)
+
+  return {
+    id: generateId(),
+    type: template.type,
+    title: template.title,
+    description: template.description,
+    target: template.baseTarget,
+    progress: 0,
+    reward,
+    difficulty: template.difficulty,
+    completed: false,
+    claimed: false,
+    createdAt: Date.now(),
+    relatedWeather: template.weather?.[0],
+    relatedStage: template.stages?.[0],
+  }
+}
+
+const refreshTasks = () => {
+  const available = getAvailableTaskTemplates()
+  const activeTasks = state.tasks.filter(t => !t.completed && !t.claimed)
+
+  if (activeTasks.length >= MAX_ACTIVE_TASKS) return
+
+  const usedTypes = new Set(activeTasks.map(t => t.type))
+  const availableToPick = available.filter(t => !usedTypes.has(t.type))
+
+  const tasksToAdd = MAX_ACTIVE_TASKS - activeTasks.length
+  const shuffled = [...availableToPick].sort(() => Math.random() - 0.5)
+  const picked = shuffled.slice(0, tasksToAdd)
+
+  picked.forEach(template => {
+    state.tasks.push(generateTaskFromTemplate(template))
+  })
+
+  state.lastTaskRefreshAt = Date.now()
+}
+
+const updateTaskProgress = (taskType: string, amount: number = 1) => {
+  state.tasks.forEach(task => {
+    if (task.type === taskType && !task.completed && !task.claimed) {
+      task.progress = Math.min(task.progress + amount, task.target)
+      if (task.progress >= task.target) {
+        task.completed = true
+        state.taskStats.totalCompleted++
+        if (task.difficulty === 'easy') state.taskStats.easyCompleted++
+        else if (task.difficulty === 'normal') state.taskStats.normalCompleted++
+        else if (task.difficulty === 'hard') state.taskStats.hardCompleted++
+        addEventLog(`✅ 任务完成：${task.title}`, 'success')
+      }
+    }
+  })
+}
+
+const claimTaskReward = (taskId: string): number => {
+  const task = state.tasks.find(t => t.id === taskId)
+  if (!task || !task.completed || task.claimed) return 0
+
+  task.claimed = true
+  state.foodStock += task.reward
+  state.taskStats.totalClaimed++
+  state.taskStats.totalRewardEarned += task.reward
+
+  addEventLog(`🎁 领取任务奖励：${task.reward} 食物`, 'success')
+  return task.reward
+}
+
+const cleanupExpiredTasks = () => {
+  state.tasks = state.tasks.filter(t => {
+    if (t.claimed) return false
+    if (t.completed) return true
+    return Date.now() - t.createdAt < TASK_REFRESH_INTERVAL * 2
+  })
+}
+
 const startGame = () => {
   Object.assign(state, createInitialState())
   usedNames.clear()
@@ -102,6 +206,7 @@ const startGame = () => {
 
   addEventLog(`🎉 新的一窝！鸟巢里有 ${eggCount} 颗蛋在等待孵化~`, 'success')
   startGameLoop()
+  refreshTasks()
   saveGame(state)
 }
 
@@ -137,10 +242,16 @@ const updateGame = (deltaMs: number) => {
     state.dayProgress -= 1
     state.day += 1
     addEventLog(`📅 第 ${state.day} 天开始了！`, 'info')
+    updateTaskProgress('survive', 1)
   }
 
   if (Date.now() >= state.nextWeatherChangeAt) {
     changeWeather()
+  }
+
+  if (Date.now() - state.lastTaskRefreshAt >= TASK_REFRESH_INTERVAL) {
+    cleanupExpiredTasks()
+    refreshTasks()
   }
 
   const weatherEffect = WEATHER_EFFECTS[state.currentWeather]
@@ -252,6 +363,8 @@ const hatchBird = (bird: Bird) => {
   state.totalHatched++
 
   addEventLog(`🥳 ${bird.name} 破壳啦！性格：${bird.personality}`, 'success')
+  updateTaskProgress('hatch', 1)
+  refreshTasks()
 }
 
 const growBird = (bird: Bird) => {
@@ -263,6 +376,7 @@ const growBird = (bird: Bird) => {
   bird.justGrew = true
 
   addEventLog(`🌟 ${bird.name} 成长为${bird.stage}啦！`, 'success')
+  refreshTasks()
 
   if (bird.stage === 'adult') {
     checkAllAdult()
@@ -301,6 +415,8 @@ const changeWeather = () => {
   state.currentWeather = newWeather
   state.nextWeatherChangeAt = Date.now() + WEATHER_CHANGE_INTERVAL + randomInt(-10000, 10000)
   addEventLog(`🌤️ 天气变化：${newWeather}`, 'info')
+  cleanupExpiredTasks()
+  refreshTasks()
 }
 
 const spawnBerry = () => {
@@ -329,6 +445,7 @@ const collectBerry = (berryId: string) => {
   const berry = state.berries[idx]
   state.foodStock += berry.value
   state.berries.splice(idx, 1)
+  updateTaskProgress('collect', 1)
   return berry.value
 }
 
@@ -348,6 +465,12 @@ const feedBird = (birdId: string, amount: number): boolean => {
     bird.fear = clamp(bird.fear - fearReduce, ATTR_MIN, ATTR_MAX)
   }
 
+  updateTaskProgress('feed', 1)
+
+  if (bird.hunger >= 80) {
+    updateTaskProgress('health', 1)
+  }
+
   return true
 }
 
@@ -356,6 +479,7 @@ const calmBird = (birdId: string): boolean => {
   if (!bird || bird.isDead || bird.isAway || bird.stage === 'egg') return false
 
   bird.fear = clamp(bird.fear - randomInt(8, 15), ATTR_MIN, ATTR_MAX)
+  updateTaskProgress('calm', 1)
   return true
 }
 
@@ -506,5 +630,7 @@ export function useGameState() {
     tryLoadGame,
     allAdults,
     aliveCount,
+    claimTaskReward,
+    refreshTasks,
   }
 }

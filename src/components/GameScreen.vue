@@ -7,6 +7,7 @@ import NestScene from './NestScene.vue'
 import WeatherOverlay from './WeatherOverlay.vue'
 import BirdCard from './BirdCard.vue'
 import EventModal from './EventModal.vue'
+import NestTaskBoard from './NestTaskBoard.vue'
 import { WEATHER_COLORS } from '@/utils/constants'
 
 const router = useRouter()
@@ -14,6 +15,7 @@ const {
   state, allAdults, aliveCount,
   collectBerry, feedBird, calmBird, buryBird,
   releaseBirds, keepAndBreed, returnToStart, tryLoadGame,
+  claimTaskReward,
 } = useGameState()
 
 onMounted(() => {
@@ -92,13 +94,21 @@ const handleCollect = (id: string) => {
           </div>
         </div>
 
-        <div class="lg:col-span-3 order-3 min-h-0 flex flex-col rounded-2xl bg-black/20 border border-white/10">
-          <EventModal
-            :state="state"
-            :all-adults="allAdults"
-            @release="releaseBirds"
-            @breed="keepAndBreed"
-          />
+        <div class="lg:col-span-3 order-3 min-h-0 flex flex-col gap-3">
+          <div class="rounded-2xl bg-black/20 border border-white/10 p-3 flex-shrink-0">
+            <NestTaskBoard
+              :tasks="state.tasks"
+              @claim="claimTaskReward"
+            />
+          </div>
+          <div class="flex-1 min-h-0 flex flex-col rounded-2xl bg-black/20 border border-white/10">
+            <EventModal
+              :state="state"
+              :all-adults="allAdults"
+              @release="releaseBirds"
+              @breed="keepAndBreed"
+            />
+          </div>
         </div>
       </div>
 

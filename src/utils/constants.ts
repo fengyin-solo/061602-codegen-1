@@ -1,4 +1,4 @@
-import type { Weather, WeatherEffect, BerryType, GrowthStage, Personality } from '@/types/game'
+import type { Weather, WeatherEffect, BerryType, GrowthStage, Personality, TaskType, TaskDifficulty } from '@/types/game'
 
 export const ATTR_MIN = 0
 export const ATTR_MAX = 100
@@ -110,3 +110,168 @@ export const BIRD_NAMES = [
   '糖糖', '圆圆', '小米', '小麦', '云朵', '星星', '月亮', '太阳',
   '小橘', '小蓝', '小绿', '小红', '阿黄', '阿白', '阿黑', '阿灰',
 ]
+
+export const TASK_REFRESH_INTERVAL = 45000
+export const MAX_ACTIVE_TASKS = 4
+
+export interface TaskTemplate {
+  type: TaskType
+  title: string
+  description: string
+  baseTarget: number
+  baseReward: number
+  difficulty: TaskDifficulty
+  weather?: Weather[]
+  stages?: GrowthStage[]
+}
+
+export const TASK_TEMPLATES: TaskTemplate[] = [
+  {
+    type: 'feed',
+    title: '喂食小能手',
+    description: '喂饱饥饿的小鸟们',
+    baseTarget: 3,
+    baseReward: 15,
+    difficulty: 'easy',
+    stages: ['chick', 'juvenile', 'subadult', 'adult'],
+  },
+  {
+    type: 'feed',
+    title: '美食家',
+    description: '让每只小鸟都吃得饱饱的',
+    baseTarget: 8,
+    baseReward: 35,
+    difficulty: 'normal',
+    stages: ['chick', 'juvenile', 'subadult', 'adult'],
+  },
+  {
+    type: 'feed',
+    title: '超级饲养员',
+    description: '今天是喂食大挑战！',
+    baseTarget: 15,
+    baseReward: 60,
+    difficulty: 'hard',
+    stages: ['chick', 'juvenile', 'subadult', 'adult'],
+  },
+  {
+    type: 'calm',
+    title: '安抚小天使',
+    description: '安抚受惊的小鸟',
+    baseTarget: 2,
+    baseReward: 12,
+    difficulty: 'easy',
+    weather: ['rainy', 'stormy', 'snowy'],
+    stages: ['chick', 'juvenile', 'subadult', 'adult'],
+  },
+  {
+    type: 'calm',
+    title: '心灵抚慰者',
+    description: '在坏天气里给小鸟安全感',
+    baseTarget: 5,
+    baseReward: 30,
+    difficulty: 'normal',
+    weather: ['rainy', 'stormy', 'snowy'],
+    stages: ['chick', 'juvenile', 'subadult', 'adult'],
+  },
+  {
+    type: 'calm',
+    title: '风暴守护者',
+    description: '暴风雨中的守护天使',
+    baseTarget: 10,
+    baseReward: 55,
+    difficulty: 'hard',
+    weather: ['stormy'],
+    stages: ['juvenile', 'subadult', 'adult'],
+  },
+  {
+    type: 'health',
+    title: '健康小卫士',
+    description: '保持小鸟健康',
+    baseTarget: 2,
+    baseReward: 18,
+    difficulty: 'easy',
+    stages: ['chick', 'juvenile', 'subadult', 'adult'],
+  },
+  {
+    type: 'health',
+    title: '贴心护理员',
+    description: '悉心照料每一只小鸟',
+    baseTarget: 5,
+    baseReward: 40,
+    difficulty: 'normal',
+    weather: ['snowy', 'stormy'],
+    stages: ['chick', 'juvenile', 'subadult', 'adult'],
+  },
+  {
+    type: 'collect',
+    title: '浆果收集者',
+    description: '收集美味的浆果',
+    baseTarget: 5,
+    baseReward: 10,
+    difficulty: 'easy',
+  },
+  {
+    type: 'collect',
+    title: '采果达人',
+    description: '在林中采集更多浆果',
+    baseTarget: 12,
+    baseReward: 25,
+    difficulty: 'normal',
+  },
+  {
+    type: 'collect',
+    title: '浆果大师',
+    description: '今天是丰收的好日子！',
+    baseTarget: 20,
+    baseReward: 50,
+    difficulty: 'hard',
+    weather: ['sunny'],
+  },
+  {
+    type: 'hatch',
+    title: '等待孵化',
+    description: '见证新生命的诞生',
+    baseTarget: 1,
+    baseReward: 20,
+    difficulty: 'easy',
+    stages: ['egg'],
+  },
+  {
+    type: 'hatch',
+    title: '孵化专家',
+    description: '让所有蛋顺利孵化',
+    baseTarget: 3,
+    baseReward: 45,
+    difficulty: 'normal',
+    stages: ['egg'],
+  },
+  {
+    type: 'survive',
+    title: '平安一天',
+    description: '平安度过这一天',
+    baseTarget: 1,
+    baseReward: 25,
+    difficulty: 'normal',
+  },
+]
+
+export const TASK_TYPE_EMOJI: Record<TaskType, string> = {
+  feed: '🍽️',
+  calm: '💝',
+  health: '💚',
+  collect: '🫐',
+  survive: '🛡️',
+  hatch: '🥚',
+}
+
+export const TASK_DIFFICULTY_COLORS: Record<TaskDifficulty, string> = {
+  easy: 'from-green-500/20 to-emerald-500/10 border-green-400/30',
+  normal: 'from-blue-500/20 to-cyan-500/10 border-blue-400/30',
+  hard: 'from-purple-500/20 to-pink-500/10 border-purple-400/30',
+}
+
+export const TASK_DIFFICULTY_NAMES: Record<TaskDifficulty, string> = {
+  easy: '简单',
+  normal: '普通',
+  hard: '困难',
+}

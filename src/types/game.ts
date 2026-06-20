@@ -56,6 +56,9 @@ export interface GameState {
   eventLog: { id: string; message: string; type: string; timestamp: number }[]
   score?: GameScore
   selectedBirdId?: string
+  tasks: Task[]
+  taskStats: TaskStats
+  lastTaskRefreshAt: number
 }
 
 export interface GameScore {
@@ -74,4 +77,34 @@ export interface WeatherEffect {
   healthMod: number
   awayChance?: number
   sickChance?: number
+}
+
+export type TaskType = 'feed' | 'calm' | 'health' | 'collect' | 'survive' | 'hatch'
+
+export type TaskDifficulty = 'easy' | 'normal' | 'hard'
+
+export interface Task {
+  id: string
+  type: TaskType
+  title: string
+  description: string
+  target: number
+  progress: number
+  reward: number
+  difficulty: TaskDifficulty
+  completed: boolean
+  claimed: boolean
+  createdAt: number
+  expiresAt?: number
+  relatedWeather?: Weather
+  relatedStage?: GrowthStage
+}
+
+export interface TaskStats {
+  totalCompleted: number
+  totalClaimed: number
+  totalRewardEarned: number
+  easyCompleted: number
+  normalCompleted: number
+  hardCompleted: number
 }

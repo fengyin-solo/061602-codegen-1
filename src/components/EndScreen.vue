@@ -109,6 +109,37 @@ const handleHome = () => {
           </div>
         </div>
 
+        <div class="bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-2xl p-5 mb-6 border border-emerald-400/20">
+          <div class="text-center">
+            <div class="text-white/80 mb-3 flex items-center justify-center gap-2">
+              <span>📋</span>
+              <span class="font-medium">任务成就</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="bg-white/5 rounded-xl p-3 text-center">
+                <div class="text-2xl mb-1">✅</div>
+                <div class="text-white/60 text-xs mb-1">完成任务</div>
+                <div class="font-bold text-lg text-emerald-400">{{ state.taskStats.totalCompleted }}</div>
+              </div>
+              <div class="bg-white/5 rounded-xl p-3 text-center">
+                <div class="text-2xl mb-1">🎁</div>
+                <div class="text-white/60 text-xs mb-1">领取奖励</div>
+                <div class="font-bold text-lg text-amber-400">{{ state.taskStats.totalClaimed }}</div>
+              </div>
+              <div class="bg-white/5 rounded-xl p-3 text-center">
+                <div class="text-2xl mb-1">🍒</div>
+                <div class="text-white/60 text-xs mb-1">获得食物</div>
+                <div class="font-bold text-lg text-pink-400">+{{ state.taskStats.totalRewardEarned }}</div>
+              </div>
+              <div class="bg-white/5 rounded-xl p-3 text-center">
+                <div class="text-2xl mb-1">🏆</div>
+                <div class="text-white/60 text-xs mb-1">困难任务</div>
+                <div class="font-bold text-lg text-purple-400">{{ state.taskStats.hardCompleted }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div v-if="state.birds.filter(b => !b.isDead && b.stage === 'adult').length > 0" class="mb-6">
           <div class="text-white/60 text-sm text-center mb-3">💐 那些陪伴过你的鸟儿们</div>
           <div class="flex flex-wrap justify-center gap-2">
